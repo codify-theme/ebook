@@ -1,25 +1,62 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import React, { useState, useEffect } from 'react';
+import { Navigation } from './components/Navigation';
+import { HomePage } from './pages/HomePage';
+import { AboutPage } from './pages/AboutPage';
+import { ContactPage } from './pages/ContactPage';
+import { BookReader } from './components/BookReader';
+import { AppProvider, useApp } from './context/AppContext';
+import { Book } from './types';
 
-const queryClient = new QueryClient();
+function AppContent() {
+  const { state, dispatch } = useApp();
+  
+  const handleNavigate = (route: string) => {
+    dispatch({ type: 'SET_CURRENT_ROUTE', payload: route });
+  };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <Routes>
-        <Route path="/" element={<Index />} />
-        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+  const handleOpenBook = (book: Book) => {
+    dispatch({ type: 'SET_CURRENT_BOOK', payload: book });
+    dispatch({ type: 'SET_CURRENT_PAGE', payload: 1 });
+    dispatch({ type: 'SET_READER_OPEN', payload: true });
+  };
+
+  const handleCloseReader = () => {
+    dispatch({ type: 'SET_READER_OPEN', payload: false });
+    dispatch({ type: 'SET_CURRENT_BOOK', payload: null });
+  };
+
+  const renderCurrentPage = () => {
+    switch (state.currentRoute) {
+      case 'about':
+        return <AboutPage />;
+      case 'contact':
+        return <ContactPage />;
+      default:
+        return <HomePage onOpenBook={handleOpenBook} />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navigation onNavigate={handleNavigate} />
+      
+      {state.isReaderOpen ? (
+        <BookReader onClose={handleCloseReader} />
+      ) : (
+        <main className="pb-8">
+          {renderCurrentPage()}
+        </main>
+      )}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <AppProvider>
+      <AppContent />
+    </AppProvider>
+  );
+}
 
 export default App;
